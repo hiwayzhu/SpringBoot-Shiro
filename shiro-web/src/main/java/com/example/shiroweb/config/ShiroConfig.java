@@ -3,6 +3,7 @@ package com.example.shiroweb.config;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.cache.CacheManager;
 import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.session.SessionListener;
 import org.apache.shiro.spring.LifecycleBeanPostProcessor;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
@@ -13,7 +14,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -45,7 +48,7 @@ public class ShiroConfig {
 
 
     /**
-     * Shiro主要配置
+     * ShiroFilter主要配置
       * @param securityManager
      * @return
      */
@@ -68,7 +71,7 @@ public class ShiroConfig {
     }
 
     @Bean
-    public SecurityManager securityManager(){
+        public SecurityManager securityManager(){
         DefaultWebSecurityManager manager = new DefaultWebSecurityManager();
         manager.setSessionManager(sessionManager());
         manager.setCacheManager(redisCacheManager());
@@ -85,11 +88,17 @@ public class ShiroConfig {
     @Bean
     public DefaultWebSessionManager sessionManager(){
         CustomSessionManager sessionManager = new CustomSessionManager();
+        List<SessionListener> list = new ArrayList<SessionListener>();
+        list.add(new MySessionListener());
+        sessionManager.setSessionValidationInterval(10000);
+        sessionManager.setSessionListeners(list);
+        sessionManager.setGlobalSessionTimeout(10000);
         sessionManager.setSessionDAO(redisSessionDao());
         return  sessionManager;
     }
 
-    @Bean RedisSessionDao redisSessionDao(){
+    @Bean
+    public RedisSessionDao redisSessionDao(){
         RedisSessionDao sessionDao = new RedisSessionDao();
         return sessionDao;
     }
