@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
+import javax.servlet.Filter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,6 +57,12 @@ public class ShiroConfig {
     public ShiroFilterFactoryBean shiroFilter (SecurityManager securityManager){
         ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
         shiroFilterFactoryBean.setSecurityManager(securityManager);
+
+        //自定义拦截器
+        Map<String, Filter> filtersMap = new LinkedHashMap<String, Filter>();
+        filtersMap.put("roleOrFilter", roleOrFilter());
+        shiroFilterFactoryBean.setFilters(filtersMap);
+
         Map<String, String> filterChainDefinitionMap = new LinkedHashMap<String, String>();
         //注意过滤器配置顺序 不能颠倒
         //配置退出 过滤器,其中的具体的退出代码Shiro已经替我们实现了，登出后跳转配置的loginUrl
@@ -64,7 +71,7 @@ public class ShiroConfig {
         //filterChainDefinitionMap.put("/hello", "anon");
         filterChainDefinitionMap.put("/ajaxLogin", "anon");
         filterChainDefinitionMap.put("/testRole", "anon");
-        filterChainDefinitionMap.put("/**", "authc");
+        filterChainDefinitionMap.put("/**", "roleOrFilter[admin,admin1]");
         shiroFilterFactoryBean.setLoginUrl("/unauth");
         shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
         return shiroFilterFactoryBean;
@@ -90,7 +97,7 @@ public class ShiroConfig {
         CustomSessionManager sessionManager = new CustomSessionManager();
         List<SessionListener> list = new ArrayList<SessionListener>();
         list.add(new MySessionListener());
-        sessionManager.setSessionValidationInterval(10000);
+        //sessionManager.setSessionValidationInterval(10000);
         sessionManager.setSessionListeners(list);
         sessionManager.setGlobalSessionTimeout(10000);
         sessionManager.setSessionDAO(redisSessionDao());
@@ -108,6 +115,11 @@ public class ShiroConfig {
         CustomRealm customRealm = new CustomRealm();
         customRealm.setCredentialsMatcher(hashedCredentialsMatcher());
         return customRealm;
+    }
+
+    @Bean
+    public RoleOrFilter roleOrFilter(){
+        return  new RoleOrFilter();
     }
 
     @Bean
